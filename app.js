@@ -683,10 +683,19 @@ async function listDirectoryImages(directoryName, extensions) {
 }
 
 function getBundledImages(assets) {
-  return assets.map((asset) => ({
-    url: asset.url || new URL(asset.path, document.baseURI).href,
-    name: asset.name || asset.path.split("/").pop(),
-  }));
+  return assets.map((asset) => {
+    const path = typeof asset === "string" ? asset : asset.path;
+    const url = window.location.protocol === "file:"
+      ? window.GIFCOLLAGE_EMBEDDED_ASSETS?.[path]
+      : new URL(path, document.baseURI).href;
+    if (!url) {
+      throw new Error(`Missing embedded image data for ${path}. Run generate_asset_manifest.py.`);
+    }
+    return {
+      url,
+      name: typeof asset === "string" ? path.split("/").pop() : asset.name,
+    };
+  });
 }
 
 async function listDirectoryImagesWithFallback(directoryName, extensions, bundledAssets) {
@@ -751,12 +760,12 @@ async function loadGifs() {
 async function loadBackgrounds() {
   try {
     const result = await listDirectoryImagesWithFallback("BACKGROUNDS", [
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".gif",
-        ".webp",
-      ], window.GIFCOLLAGE_ASSETS.backgrounds);
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".gif",
+      ".webp",
+    ], window.GIFCOLLAGE_ASSETS.backgrounds);
     backgrounds = result.images;
   } catch (error) {
     status.textContent = "Could not load BACKGROUNDS/ or the bundled background files; gradients are still available.";
@@ -1258,5 +1267,29 @@ for (const button of aspectRatioButtons) {
 
 window.addEventListener("resize", fitCanvasToViewport);
 fitCanvasToViewport();
-loadGifs();
-loadBackgrounds();
+async function initializeAssets() {
+  if (window.location.protocol === "file:") {
+    try {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        const embeddedAssetsUrl = new URL("embedded-assets.js", document.baseURI);
+        embeddedAssetsUrl.searchParams.set("v", Date.now());
+        script.src = embeddedAssetsUrl.href;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("Could not load embedded-assets.js."));
+        document.head.append(script);
+      });
+    } catch (error) {
+      const message = "Could not load embedded GIF data. Run generate_asset_manifest.py.";
+      status.textContent = message;
+      hint.textContent = message;
+      hint.hidden = false;
+      console.error("Failed to load local embedded assets.", error);
+      return;
+    }
+  }
+
+  await Promise.all([loadGifs(), loadBackgrounds()]);
+}
+
+initializeAssets();

@@ -1,8 +1,8 @@
 # GIFCOLLAGE
 
-Open `index.html` directly in Safari or another browser. The GIFs and background images are embedded as data URLs in `asset-manifest.js`, allowing both preview and canvas exports without a local web server.
+Open `index.html` directly in Safari or another browser. The GIFs and background images are embedded in `embedded-assets.js`, which is loaded only for `file://` pages so local use does not need a web server. GitHub Pages uses the small path-only `asset-manifest.js` and loads the image files directly.
 
-Browsers do not allow a page opened from a file to scan a folder automatically, and static hosts such as GitHub Pages do not provide folder listings. After adding or removing GIFs or backgrounds, run `python3 generate_asset_manifest.py` to refresh the embedded assets. The app uses folder discovery when available and falls back to the bundled manifest on static hosts.
+Browsers do not allow a page opened from a file to scan a folder automatically, and static hosts such as GitHub Pages do not provide folder listings. After adding or removing GIFs or backgrounds, run `python3 generate_asset_manifest.py` to refresh both manifests. The app uses folder discovery when available and falls back to the path manifest on static hosts.
 
 Safari does not provide the web Save File Picker API, so exports use Safari's normal download behavior. To choose a save location each time, set Safari > Settings > General > File download location to **Ask for each download**.
 
