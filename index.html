@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GIFCOLLAGE</title>
+    <link rel="stylesheet" href="styles.css?v=10">
+    <script src="asset-manifest.js?v=2" defer></script>
+    <script src="vendor/gifenc.js?v=1" defer></script>
+    <script src="vendor/omggif.js?v=1" defer></script>
+    <script src="app.js?v=24" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <h1>GIFCOLLAGE</h1>
+      <button id="export-toggle" class="export-toggle" type="button" aria-label="Open export menu" aria-expanded="false" aria-controls="export-panel">
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M10 12V2m0 0L6 6m4-4 4 4M3 11v6h14v-6" />
+        </svg>
+      </button>
+    </header>
+
+    <div id="export-backdrop" class="export-backdrop" hidden></div>
+    <aside id="export-panel" class="export-panel" role="dialog" aria-modal="true" aria-labelledby="export-title" hidden>
+      <div class="export-panel-header">
+        <h2 id="export-title">EXPORT</h2>
+        <button id="export-close" class="export-close" type="button" aria-label="Close export menu">×</button>
+      </div>
+      <div class="export-format-label">FORMAT</div>
+      <div class="export-format-list" role="group" aria-label="Export format">
+        <div class="export-option-row">
+          <button class="export-format-option" type="button" data-export-format="png" aria-pressed="true">
+            <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" /><path d="m5.5 9 2.2 2.2 4.8-4.8" /></svg>
+            <span>PNG</span>
+          </button>
+          <div class="export-size-selector" role="group" aria-label="PNG export size">
+            <button type="button" data-export-size="png" data-scale="1" aria-pressed="true">FULL</button>
+            <button type="button" data-export-size="png" data-scale="0.5" aria-pressed="false">HALF</button>
+          </div>
+        </div>
+        <div class="export-option-row">
+          <button class="export-format-option" type="button" data-export-format="jpg" aria-pressed="false">
+            <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" /><path d="m5.5 9 2.2 2.2 4.8-4.8" /></svg>
+            <span>JPG</span>
+          </button>
+          <div class="export-size-selector" role="group" aria-label="JPG export size">
+            <button type="button" data-export-size="jpg" data-scale="1" aria-pressed="true">FULL</button>
+            <button type="button" data-export-size="jpg" data-scale="0.5" aria-pressed="false">HALF</button>
+          </div>
+        </div>
+        <div class="export-option-row">
+          <button class="export-format-option" type="button" data-export-format="gif" aria-pressed="false">
+            <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" /><path d="m5.5 9 2.2 2.2 4.8-4.8" /></svg>
+            <span>GIF · 2 SEC · 12 FPS · LOOP</span>
+          </button>
+        </div>
+        <div class="export-option-row">
+          <button class="export-format-option" type="button" data-export-format="mp4" aria-pressed="false">
+            <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" /><path d="m5.5 9 2.2 2.2 4.8-4.8" /></svg>
+            <span>MP4 · 24 FPS</span>
+          </button>
+          <div class="export-size-selector" role="group" aria-label="MP4 export size">
+            <button type="button" data-export-size="mp4" data-scale="1" aria-pressed="true">FULL</button>
+            <button type="button" data-export-size="mp4" data-scale="0.5" aria-pressed="false">HALF</button>
+          </div>
+        </div>
+      </div>
+      <div id="gif-quality-controls" class="gif-quality-controls" hidden>
+        <label class="gif-quality-label" for="gif-quality">
+          <span>GIF QUALITY</span>
+          <output id="gif-quality-value" for="gif-quality">70%</output>
+        </label>
+        <input id="gif-quality" class="gif-quality" type="range" min="1" max="100" value="70">
+        <p class="gif-quality-hint">Lower quality uses fewer colors and stronger dithering to reduce file size.</p>
+      </div>
+      <div id="mp4-duration-controls" class="export-slider-controls" hidden>
+        <label class="gif-quality-label" for="mp4-duration">
+          <span>MP4 LENGTH</span>
+          <output id="mp4-duration-value" for="mp4-duration">5 SEC</output>
+        </label>
+        <input id="mp4-duration" class="export-range" type="range" min="1" max="10" step="1" value="5">
+      </div>
+      <div id="export-effect-controls" class="export-slider-controls" hidden>
+        <label class="gif-quality-label" for="export-effect">
+          <span>DITHER / POSTERIZE</span>
+          <output id="export-effect-value" for="export-effect">0%</output>
+        </label>
+        <input id="export-effect" class="export-range" type="range" min="0" max="100" step="1" value="0">
+        <p class="gif-quality-hint">0% keeps the original colors; higher values increase dithering and posterization.</p>
+      </div>
+      <button id="export-submit" class="export-submit" type="button">EXPORT</button>
+    </aside>
+
+    <main>
+      <section class="collage" aria-label="GIF collage editor">
+        <div class="canvas-wrap">
+          <canvas id="canvas" width="1280" height="800" aria-label="GIF collage canvas"></canvas>
+          <div id="gif-layer" class="gif-layer" aria-hidden="true"></div>
+          <p id="canvas-hint" class="canvas-hint">Loading GIFs...</p>
+        </div>
+        <div class="controls" aria-label="Canvas controls">
+          <button id="undo" type="button" disabled>UNDO</button>
+          <button id="clear" type="button" disabled>CLEAR</button>
+          <button id="background" type="button">
+            <svg class="shuffle-icon" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M2 4h2.5c2 0 3 8 5 8H14M11 9.5 14 12l-3 2.5M2 12h2.5c2 0 3-8 5-8H14M11 1.5 14 4l-3 2.5" />
+            </svg>
+            <span>BACKGROUND</span>
+          </button>
+        </div>
+        <div class="aspect-ratios" role="group" aria-label="Canvas aspect ratio">
+          <button type="button" data-base-width="1" data-base-height="1" data-inverted="false" aria-pressed="false">1:1</button>
+          <button type="button" data-base-width="4" data-base-height="3" data-inverted="false" aria-pressed="false">4:3</button>
+          <button type="button" data-base-width="5" data-base-height="4" data-inverted="false" aria-pressed="false">5:4</button>
+          <button type="button" data-base-width="16" data-base-height="9" data-inverted="false" aria-pressed="false">16:9</button>
+          <button type="button" data-base-width="16" data-base-height="10" data-inverted="true" aria-pressed="true">16:10</button>
+        </div>
+        <p id="status" class="status" role="status" aria-live="polite">Loading GIFs...</p>
+      </section>
+    </main>
+
+  </body>
+</html>
