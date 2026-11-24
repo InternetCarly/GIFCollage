@@ -689,15 +689,42 @@ function getBundledImages(assets) {
   }));
 }
 
-async function loadGifs() {
+async function listDirectoryImagesWithFallback(directoryName, extensions, bundledAssets) {
+  const bundledImages = () => getBundledImages(bundledAssets);
+  if (window.location.protocol === "file:") {
+    return { images: bundledImages(), usedBundled: true };
+  }
+
   try {
-    const imageList = window.location.protocol === "file:"
-      ? getBundledImages(window.GIFCOLLAGE_ASSETS.gifs)
-      : await listDirectoryImages("GIFS", [".gif"]);
-    gifs = imageList
+    const images = await listDirectoryImages(directoryName, extensions);
+    if (images.length) {
+      return { images, usedBundled: false };
+    }
+  } catch (error) {
+    const fallbackImages = bundledImages();
+    if (!fallbackImages.length) {
+      throw error;
+    }
+    console.warn(`Could not list ${directoryName}/; using bundled assets instead.`, error);
+    return { images: fallbackImages, usedBundled: true };
+  }
+
+  return { images: bundledImages(), usedBundled: true };
+}
+
+async function loadGifs() {
+  let usedBundled = false;
+  try {
+    const result = await listDirectoryImagesWithFallback(
+      "GIFS",
+      [".gif"],
+      window.GIFCOLLAGE_ASSETS.gifs,
+    );
+    usedBundled = result.usedBundled;
+    gifs = result.images
       .map((gif) => ({ ...gif, image: null, failed: false }));
   } catch (error) {
-    const message = "Could not load GIFS/. Check the bundled GIF list and files.";
+    const message = "Could not load GIFS/ or the bundled GIF files.";
     status.textContent = message;
     hint.textContent = message;
     hint.hidden = false;
@@ -715,25 +742,25 @@ async function loadGifs() {
   }
 
   hint.hidden = true;
-  status.textContent = `${gifs.length} GIF${gifs.length === 1 ? "" : "s"} ready. Hover to preview; drag up or down to resize in place.`;
+  const bundledMessage = usedBundled ? " Using bundled GIFs." : "";
+  status.textContent = `${gifs.length} GIF${gifs.length === 1 ? "" : "s"} ready.${bundledMessage} Hover to preview; drag up or down to resize in place.`;
   fitCanvasToViewport();
   selectRandomGif();
 }
 
 async function loadBackgrounds() {
   try {
-    backgrounds = window.location.protocol === "file:"
-      ? getBundledImages(window.GIFCOLLAGE_ASSETS.backgrounds)
-      : await listDirectoryImages("backgrounds", [
+    const result = await listDirectoryImagesWithFallback("BACKGROUNDS", [
         ".png",
         ".jpg",
         ".jpeg",
         ".gif",
         ".webp",
-      ]);
+      ], window.GIFCOLLAGE_ASSETS.backgrounds);
+    backgrounds = result.images;
   } catch (error) {
-    status.textContent = "Could not load backgrounds/; gradient backgrounds are still available.";
-    console.error("Failed to read the backgrounds/ directory listing.", error);
+    status.textContent = "Could not load BACKGROUNDS/ or the bundled background files; gradients are still available.";
+    console.error("Failed to load background assets.", error);
   }
 }
 
