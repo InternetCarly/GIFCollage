@@ -797,7 +797,7 @@ function updatePointer(event) {
 }
 
 function beginStamp(event) {
-  if (!currentGif || pointer?.dragging || event.button !== 0) {
+  if (isExporting || !currentGif || pointer?.dragging || event.button !== 0) {
     return;
   }
 
@@ -825,7 +825,7 @@ canvas.addEventListener("pointerleave", () => {
 
 function finishStamp(event) {
  const isMouseEvent = event.type === "mouseup";
- if (!pointer?.dragging
+ if (isExporting || !pointer?.dragging
      || (pointer.pointerId !== null && event.pointerId !== pointer.pointerId && !isMouseEvent)) {
     return;
   }
@@ -1131,6 +1131,13 @@ async function exportCollage(format, saveHandlePromise) {
     return;
   }
   isExporting = true;
+  document.body.classList.add("is-exporting");
+  if (pointer?.dragging) {
+    pointer = null;
+    canvas.classList.remove("is-resizing");
+    document.body.classList.remove("is-resizing");
+    updateGifLayer();
+  }
   setExportControlsDisabled(true);
   exportSubmitButton.disabled = true;
 
@@ -1180,6 +1187,7 @@ async function exportCollage(format, saveHandlePromise) {
     console.error("Canvas export failed.", error);
   } finally {
     isExporting = false;
+    document.body.classList.remove("is-exporting");
     setExportControlsDisabled(false);
     exportSubmitButton.disabled = false;
   }

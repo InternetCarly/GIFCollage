@@ -10,6 +10,7 @@
   --normal-select-cursor: url("cursors/Normal Select.cur"), default;
   --diagonal-resize-cursor: url("cursors/Diagonal Resize 2.cur"), nwse-resize;
   --link-select-cursor: url("cursors/Link Select.cur"), pointer;
+  --busy-cursor: url("cursors/Busy.ani"), progress;
   color: #222;
   background: #fff;
   font-family: Arial, Helvetica, sans-serif;
@@ -29,6 +30,11 @@ body {
   background-image: url("website backdrop/backgroind.png"); /* Change this path to use another webpage background image. */
   background-size: 100px; /* Change to e.g. 320px auto to adjust tile size while preserving its proportions. */
   background-repeat: repeat;
+}
+
+body.is-exporting,
+body.is-exporting * {
+  cursor: var(--busy-cursor) !important;
 }
 
 .site-header {
